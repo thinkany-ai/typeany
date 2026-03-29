@@ -3,7 +3,7 @@ import Combine
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menuBar = MenuBarController()
-    private let fnMonitor = FnKeyMonitor()
+    private let hotkeyMonitor = HotkeyMonitor()
     private let audioRecorder = AudioRecorder()
     private let speechRecognizer = SpeechRecognizer()
     private let whisperLocal = WhisperLocalEngine()
@@ -45,14 +45,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        // Setup Fn key callbacks
-        fnMonitor.onFnDown = { [weak self] in
+        // Setup hotkey callbacks
+        hotkeyMonitor.onKeyDown = { [weak self] in
             self?.startRecording()
         }
-        fnMonitor.onFnUp = { [weak self] in
+        hotkeyMonitor.onKeyUp = { [weak self] in
             self?.stopRecording()
         }
-        fnMonitor.start()
+        configureAndStartHotkey()
+
+        // Allow menu bar to trigger hotkey reconfiguration
+        menuBar.onTriggerKeyChanged = { [weak self] in
+            self?.configureAndStartHotkey()
+        }
 
         // Observe language changes
         appState.$selectedLanguage
@@ -81,6 +86,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Hotkey Configuration
+
+    private func configureAndStartHotkey() {
+        let prefs = PreferencesManager.shared
+        hotkeyMonitor.configure(
+            triggerKey: prefs.triggerKey,
+            customCombo: prefs.customKeyCombo
+        )
+        hotkeyMonitor.start()
     }
 
     // MARK: - VAD (Voice Activity Detection)

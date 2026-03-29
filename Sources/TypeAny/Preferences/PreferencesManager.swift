@@ -18,6 +18,7 @@ final class PreferencesManager {
             Constants.Defaults.whisperAPIBaseURL: "",
             Constants.Defaults.whisperAPIKey: "",
             Constants.Defaults.whisperAPIModel: "whisper-1",
+            Constants.Defaults.triggerKey: TriggerKey.fn.rawValue,
         ])
     }
 
@@ -83,6 +84,31 @@ final class PreferencesManager {
     var whisperAPIModel: String {
         get { defaults.string(forKey: Constants.Defaults.whisperAPIModel) ?? "whisper-1" }
         set { defaults.set(newValue, forKey: Constants.Defaults.whisperAPIModel) }
+    }
+
+    // MARK: - Trigger Key
+
+    var triggerKey: TriggerKey {
+        get {
+            guard let raw = defaults.string(forKey: Constants.Defaults.triggerKey),
+                  let key = TriggerKey(rawValue: raw) else { return .fn }
+            return key
+        }
+        set { defaults.set(newValue.rawValue, forKey: Constants.Defaults.triggerKey) }
+    }
+
+    var customKeyCombo: CustomKeyCombo? {
+        get {
+            guard let data = defaults.data(forKey: Constants.Defaults.customKeyCombo) else { return nil }
+            return try? JSONDecoder().decode(CustomKeyCombo.self, from: data)
+        }
+        set {
+            if let combo = newValue, let data = try? JSONEncoder().encode(combo) {
+                defaults.set(data, forKey: Constants.Defaults.customKeyCombo)
+            } else {
+                defaults.removeObject(forKey: Constants.Defaults.customKeyCombo)
+            }
+        }
     }
 
     // MARK: - VAD

@@ -3,6 +3,7 @@ import Cocoa
 
 final class SettingsWindowController {
     private var window: NSWindow?
+    var onTriggerKeyChanged: (() -> Void)?
 
     func show() {
         if let window = window {
@@ -11,16 +12,21 @@ final class SettingsWindowController {
             return
         }
 
-        let settingsView = SettingsView { [weak self] in
-            self?.window?.close()
-            self?.window = nil
-        }
+        let settingsView = SettingsView(
+            onClose: { [weak self] in
+                self?.window?.close()
+                self?.window = nil
+            },
+            onTriggerKeyChanged: { [weak self] in
+                self?.onTriggerKeyChanged?()
+            }
+        )
 
         let hostingController = NSHostingController(rootView: settingsView)
 
         let window = NSWindow(contentViewController: hostingController)
         window.title = "TypeAny - Settings"
-        window.setContentSize(NSSize(width: 520, height: 560))
+        window.setContentSize(NSSize(width: 520, height: 640))
         window.styleMask = [.titled, .closable]
         window.center()
         window.isReleasedWhenClosed = false
@@ -33,6 +39,13 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     let onClose: () -> Void
+    var onTriggerKeyChanged: (() -> Void)?
+
+    // Trigger Key
+    @State private var triggerKey: TriggerKey
+    @State private var customCombo: CustomKeyCombo?
+    @State private var isRecordingKey = false
+    @State private var keyRecorder: KeyRecorder?
 
     // ASR Engine
     @State private var asrEngine: ASREngineType
@@ -50,9 +63,12 @@ struct SettingsView: View {
     @State private var testResult: String = ""
     @State private var isTesting = false
 
-    init(onClose: @escaping () -> Void) {
+    init(onClose: @escaping () -> Void, onTriggerKeyChanged: (() -> Void)? = nil) {
         self.onClose = onClose
+        self.onTriggerKeyChanged = onTriggerKeyChanged
         let prefs = PreferencesManager.shared
+        _triggerKey = State(initialValue: prefs.triggerKey)
+        _customCombo = State(initialValue: prefs.customKeyCombo)
         _asrEngine = State(initialValue: prefs.asrEngine)
         _whisperModelPath = State(initialValue: prefs.whisperModelPath)
         _whisperAPIBaseURL = State(initialValue: prefs.whisperAPIBaseURL)
@@ -68,6 +84,8 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                triggerKeySection
+                Divider()
                 asrEngineSection
                 Divider()
                 llmSection
@@ -75,7 +93,88 @@ struct SettingsView: View {
             }
             .padding()
         }
-        .frame(width: 520, height: 560)
+        .frame(width: 520, height: 640)
+    }
+
+    // MARK: - Trigger Key Section
+
+    private var triggerKeySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Trigger Key")
+                .font(.headline)
+
+            // Dropdown picker for preset keys
+            HStack {
+                Picker("触发键:", selection: $triggerKey) {
+                    ForEach(TriggerKey.allCases.filter { $0 != .custom }, id: \.self) { key in
+                        Text(key.displayName).tag(key)
+                    }
+                    if customCombo != nil {
+                        Text("Custom: \(customCombo?.displayString ?? "")").tag(TriggerKey.custom)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: 280)
+            }
+
+            // Hint for selected key
+            if let hint = triggerKey.hint {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.yellow)
+                        .font(.caption)
+                    Text(hint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Record Custom Key button
+            HStack(spacing: 10) {
+                Button(isRecordingKey ? "Press any key..." : "Record Custom Key") {
+                    startKeyRecording()
+                }
+                .disabled(isRecordingKey)
+
+                if isRecordingKey {
+                    Button("Cancel") {
+                        cancelKeyRecording()
+                    }
+                }
+
+                if let combo = customCombo {
+                    Text(combo.displayString)
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .cornerRadius(4)
+                }
+            }
+        }
+    }
+
+    private func startKeyRecording() {
+        isRecordingKey = true
+        let recorder = KeyRecorder()
+        recorder.onRecorded = { combo in
+            self.customCombo = combo
+            self.triggerKey = .custom
+            self.isRecordingKey = false
+            self.keyRecorder = nil
+        }
+        recorder.onCancelled = {
+            self.isRecordingKey = false
+            self.keyRecorder = nil
+        }
+        self.keyRecorder = recorder
+        recorder.startRecording()
+    }
+
+    private func cancelKeyRecording() {
+        keyRecorder?.stopRecording()
+        keyRecorder = nil
+        isRecordingKey = false
     }
 
     // MARK: - ASR Engine Section
@@ -288,6 +387,10 @@ struct SettingsView: View {
 
     private func save() {
         let prefs = PreferencesManager.shared
+        // Trigger Key settings
+        prefs.triggerKey = triggerKey
+        prefs.customKeyCombo = customCombo
+        onTriggerKeyChanged?()
         // ASR settings
         prefs.asrEngine = asrEngine
         prefs.whisperModelPath = whisperModelPath

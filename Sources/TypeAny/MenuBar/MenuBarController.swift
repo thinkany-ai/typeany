@@ -7,6 +7,7 @@ final class MenuBarController {
     private let hotWordsWindowController = HotWordsWindowController()
     var onQuit: (() -> Void)?
     var onHistoryInject: ((String) -> Void)?
+    var onTriggerKeyChanged: (() -> Void)?
 
     func setup() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -44,6 +45,33 @@ final class MenuBarController {
         }
         langItem.submenu = langMenu
         menu.addItem(langItem)
+
+        // Trigger Key submenu
+        let triggerItem = NSMenuItem(title: "Trigger Key", action: nil, keyEquivalent: "")
+        let triggerMenu = NSMenu()
+        let currentTrigger = PreferencesManager.shared.triggerKey
+        for key in TriggerKey.allCases where key != .custom {
+            let item = NSMenuItem(title: key.displayName, action: #selector(triggerKeySelected(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = key.rawValue
+            if key == currentTrigger {
+                item.state = .on
+            }
+            triggerMenu.addItem(item)
+        }
+        // Show custom entry if one is configured
+        if let combo = PreferencesManager.shared.customKeyCombo {
+            triggerMenu.addItem(NSMenuItem.separator())
+            let customItem = NSMenuItem(title: "Custom: \(combo.displayString)", action: #selector(triggerKeySelected(_:)), keyEquivalent: "")
+            customItem.target = self
+            customItem.representedObject = TriggerKey.custom.rawValue
+            if currentTrigger == .custom {
+                customItem.state = .on
+            }
+            triggerMenu.addItem(customItem)
+        }
+        triggerItem.submenu = triggerMenu
+        menu.addItem(triggerItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -135,6 +163,14 @@ final class MenuBarController {
         rebuildMenu()
     }
 
+    @objc private func triggerKeySelected(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let key = TriggerKey(rawValue: rawValue) else { return }
+        PreferencesManager.shared.triggerKey = key
+        onTriggerKeyChanged?()
+        rebuildMenu()
+    }
+
     @objc private func toggleVAD(_ sender: NSMenuItem) {
         PreferencesManager.shared.vadEnabled.toggle()
         rebuildMenu()
@@ -146,6 +182,10 @@ final class MenuBarController {
     }
 
     @objc private func openSettings(_ sender: NSMenuItem) {
+        settingsWindowController.onTriggerKeyChanged = { [weak self] in
+            self?.onTriggerKeyChanged?()
+            self?.rebuildMenu()
+        }
         settingsWindowController.show()
     }
 

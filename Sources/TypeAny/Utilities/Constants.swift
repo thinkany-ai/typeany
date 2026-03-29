@@ -17,5 +17,7 @@ enum Constants {
         static let whisperAPIBaseURL = "whisperAPIBaseURL"
         static let whisperAPIKey = "whisperAPIKey"
         static let whisperAPIModel = "whisperAPIModel"
+        static let triggerKey = "triggerKey"
+        static let customKeyCombo = "customKeyCombo"
     }
 }
