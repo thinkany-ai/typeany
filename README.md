@@ -8,13 +8,29 @@
 
 A lightweight macOS menu-bar app for voice input. Hold a trigger key to record, release to transcribe and inject text into any focused input field.
 
-## ⚡ One-line Install
+## ⚡ Install
+
+### Homebrew (recommended)
+
+```bash
+brew tap thinkany-ai/tap
+brew install typeany
+```
+
+Then launch:
+```bash
+open $(brew --prefix)/opt/typeany/TypeAny.app
+# or symlink to Applications:
+ln -sf $(brew --prefix)/opt/typeany/TypeAny.app /Applications/TypeAny.app
+```
+
+### One-line script
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/thinkany-ai/typeany/main/install.sh)"
 ```
 
-> Requires macOS 14+ and Xcode Command Line Tools (`xcode-select --install`)
+> Both methods require macOS 14+ and Xcode Command Line Tools (`xcode-select --install`)
 
 ## ✨ Features
 
