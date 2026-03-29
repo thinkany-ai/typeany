@@ -96,6 +96,9 @@ final class HotkeyMonitor {
         if wasRunning { start() }
     }
 
+    /// Whether the last start() call succeeded in creating an event tap
+    private(set) var isRunning: Bool = false
+
     func start() {
         var eventMask: CGEventMask = 0
 
@@ -113,6 +116,8 @@ final class HotkeyMonitor {
                       | (1 << CGEventType.keyUp.rawValue)
         }
 
+        print("[TypeAny] HotkeyMonitor starting for key: \(triggerKey.displayName), eventMask: \(eventMask)")
+
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
@@ -125,7 +130,9 @@ final class HotkeyMonitor {
             },
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
-            print("[TypeAny] Failed to create CGEvent tap. Accessibility permission required.")
+            print("[TypeAny] ❌ Failed to create CGEvent tap — accessibility permission not granted!")
+            isRunning = false
+            onTapCreateFailed?()
             return
         }
 
@@ -133,7 +140,12 @@ final class HotkeyMonitor {
         self.runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
+        isRunning = true
+        print("[TypeAny] ✅ HotkeyMonitor started successfully for: \(triggerKey.displayName)")
     }
+
+    /// Called on the main thread when CGEvent.tapCreate fails (accessibility permission missing)
+    var onTapCreateFailed: (() -> Void)?
 
     func stop() {
         if let tap = eventTap {
@@ -145,6 +157,7 @@ final class HotkeyMonitor {
         eventTap = nil
         runLoopSource = nil
         keyIsDown = false
+        isRunning = false
     }
 
     // MARK: - Event Handling

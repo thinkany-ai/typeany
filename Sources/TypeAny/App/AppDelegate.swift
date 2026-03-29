@@ -37,8 +37,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.injectHistoryItem(text)
         }
 
-        // Request permissions
-        _ = Permissions.checkAccessibility()
+        // Request permissions — check accessibility first
+        let accessibilityGranted = Permissions.checkAccessibility()
+        if !accessibilityGranted {
+            Permissions.showAccessibilityAlert()
+        }
+
         Permissions.requestMicrophone { granted in
             if granted {
                 Permissions.requestSpeechRecognition { _ in }
@@ -52,7 +56,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyMonitor.onKeyUp = { [weak self] in
             self?.stopRecording()
         }
+        hotkeyMonitor.onTapCreateFailed = { [weak self] in
+            DispatchQueue.main.async {
+                self?.menuBar.updateIconForPermissionIssue()
+                Permissions.showAccessibilityAlert()
+            }
+        }
         configureAndStartHotkey()
+
+        // Update menu bar icon if hotkey monitor failed to start
+        if !hotkeyMonitor.isRunning {
+            menuBar.updateIconForPermissionIssue()
+        }
 
         // Allow menu bar to trigger hotkey reconfiguration
         menuBar.onTriggerKeyChanged = { [weak self] in
