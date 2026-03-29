@@ -107,12 +107,6 @@ final class MenuBarController {
         enableItem.state = PreferencesManager.shared.llmEnabled ? .on : .off
         llmMenu.addItem(enableItem)
 
-        llmMenu.addItem(NSMenuItem.separator())
-
-        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings(_:)), keyEquivalent: "")
-        settingsItem.target = self
-        llmMenu.addItem(settingsItem)
-
         llmItem.submenu = llmMenu
         menu.addItem(llmItem)
 
@@ -146,6 +140,13 @@ final class MenuBarController {
 
         historyItem.submenu = historyMenu
         menu.addItem(historyItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // Settings (top-level)
+        let topSettingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings(_:)), keyEquivalent: ",")
+        topSettingsItem.target = self
+        menu.addItem(topSettingsItem)
 
         menu.addItem(NSMenuItem.separator())
 
