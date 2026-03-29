@@ -15,6 +15,8 @@ final class FloatingPanelController {
         contentModel.transcription = ""
         contentModel.audioLevel = 0
         contentModel.statusText = nil
+        contentModel.showSuccess = false
+        contentModel.vadBlinking = false
 
         let content = FloatingPanelContent(model: contentModel)
         let hosting = NSHostingView(rootView: content)
