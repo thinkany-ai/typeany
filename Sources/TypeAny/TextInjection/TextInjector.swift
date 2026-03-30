@@ -28,7 +28,8 @@ final class TextInjector {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        // 4. Simulate Cmd+V
+        // 4. Simulate Cmd+V (small delay to ensure clipboard is ready)
+        usleep(50_000) // 50ms
         simulatePaste()
 
         // 5. Restore original input source after paste
