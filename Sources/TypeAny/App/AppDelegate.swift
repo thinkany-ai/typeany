@@ -9,6 +9,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let whisperLocal = WhisperLocalEngine()
     private let whisperAPI = WhisperAPIEngine()
     private let textInjector = TextInjector()
+    private let liveTyper = LiveTextTyper()
+    /// Set when recording starts in a field where TypeAny is the active input method;
+    /// voice text then goes through IMK marked text instead of simulated keystrokes.
+    private var imeTarget: TypeAnyInputController?
     private let llmRefiner = LLMRefiner()
     private let floatingPanel = FloatingPanelController()
     private let appState = AppState.shared
@@ -37,12 +41,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.injectHistoryItem(text)
         }
 
-        // Request permissions
-        _ = Permissions.checkAccessibility()
-        Permissions.requestMicrophone { granted in
-            if granted {
-                Permissions.requestSpeechRecognition { _ in }
+        InputMethodState.openSettings = { [weak self] in
+            self?.menuBar.showSettings()
+        }
+
+        menuBar.onOpenOnboarding = { OnboardingLauncher.launch() }
+        InputMethodState.openOnboarding = { OnboardingLauncher.launch() }
+
+        if PreferencesManager.shared.onboardingCompleted {
+            // Request permissions
+            _ = Permissions.checkAccessibility()
+            Permissions.requestMicrophone { granted in
+                if granted {
+                    Permissions.requestSpeechRecognition { _ in }
+                }
             }
+        } else {
+            // First run: the onboarding window walks through permissions instead of raw prompts
+            OnboardingLauncher.launch()
+        }
+
+        // macOS launches the input method in the background only when TypeAny is the
+        // selected input source; any other launch came from the user (Spotlight, Finder),
+        // so behave like a regular app and show the settings window.
+        if PreferencesManager.shared.onboardingCompleted && !InputSourceRegistrar.status().selected {
+            menuBar.showSettings()
         }
 
         // Setup hotkey callbacks
@@ -83,9 +106,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self = self else { return }
                 if self.appState.recordingState == .recording && self.currentEngine == .apple {
                     self.appState.currentTranscription = text
+                    let corrected = HotWordsManager.shared.applyReplacements(text)
+                    if let ime = self.imeTarget, PreferencesManager.shared.liveTypingEnabled {
+                        ime.showVoicePartial(corrected)
+                    } else if self.liveTyper.isActive {
+                        self.liveTyper.update(corrected)
+                    }
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Launching TypeAny again (Spotlight, Finder, Launchpad) while it's already running
+    /// as an input method lands here — open the settings window like a normal app would.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        menuBar.showSettings()
+        return false
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        RimeEngine.shared.stop()
     }
 
     // MARK: - Hotkey Configuration
@@ -97,6 +137,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             customCombo: prefs.customKeyCombo
         )
         hotkeyMonitor.start()
+
+        // Event tap creation fails until Accessibility is granted; keep retrying
+        // so the hotkey works as soon as the user flips the switch.
+        if !hotkeyMonitor.isRunning {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.configureAndStartHotkey()
+            }
+        }
     }
 
     // MARK: - VAD (Voice Activity Detection)
@@ -162,7 +210,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         audioRecorder.startRecording(recordWAV: needsWAV)
 
         // Only start streaming speech recognition for Apple ASR
+        imeTarget = InputMethodState.activeController
+        imeTarget?.beginVoice()
+
         if currentEngine == .apple {
+            if imeTarget == nil && PreferencesManager.shared.liveTypingEnabled {
+                liveTyper.begin()
+            }
             speechRecognizer.startStreaming(audioBufferSubject: audioRecorder.audioBufferSubject)
         }
     }
@@ -288,6 +342,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func injectAndCleanup(text: String) {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            // Remove any live text that the final result discarded
+            liveTyper.finish(with: "")
             cleanupAfterFailure()
             return
         }
@@ -297,7 +353,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Small delay to let the floating panel update
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
-            self.textInjector.inject(text: text)
+            if let ime = self.imeTarget {
+                ime.commitVoice(text)
+                self.imeTarget = nil
+            } else if self.liveTyper.isActive {
+                // Text is already in the field; just correct it to the final version
+                self.liveTyper.finish(with: text)
+            } else {
+                self.textInjector.inject(text: text)
+            }
 
             // Save to history
             PreferencesManager.shared.addToHistory(text)
@@ -318,6 +382,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func cleanupAfterFailure() {
+        imeTarget?.cancelVoice()
+        imeTarget = nil
+        if liveTyper.isActive {
+            liveTyper.finish(with: liveTyper.typedText)
+        }
         floatingPanel.hide()
         appState.recordingState = .idle
         appState.currentTranscription = ""
@@ -328,6 +397,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func injectHistoryItem(_ text: String) {
         guard appState.recordingState == .idle else { return }
-        textInjector.inject(text: text)
+        if let ime = InputMethodState.activeController {
+            ime.commitVoice(text)
+        } else {
+            textInjector.inject(text: text)
+        }
     }
 }

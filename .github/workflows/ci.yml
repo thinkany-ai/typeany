@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    # 需要 macOS 26 SDK（Apple 本地翻译 Translation API）
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          swift --version
+
+      - name: Dependencies
+        run: brew install librime opencc
+
+      - name: Tests (pinyin candidates, auto spacing)
+        run: make test
+
+      - name: Build release app with bundled librime (ad-hoc signed)
+        run: |
+          make build VARIANT=release
+          ./scripts/bundle-libs.sh .build/TypeAny.app
+          codesign --force --deep --sign - .build/TypeAny.app
+          .build/TypeAny.app/Contents/MacOS/TypeAny --self-test
+
+      - name: Archive
+        run: ditto -c -k --keepParent .build/TypeAny.app TypeAny-unsigned.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TypeAny-unsigned-${{ github.sha }}
+          path: TypeAny-unsigned.zip
+          if-no-files-found: error

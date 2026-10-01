@@ -26,6 +26,19 @@ enum TriggerKey: String, CaseIterable, Codable {
         }
     }
 
+    var shortLabel: String {
+        switch self {
+        case .fn: return "Fn"
+        case .rightOption: return "右 ⌥"
+        case .rightCommand: return "右 ⌘"
+        case .rightControl: return "右 ⌃"
+        case .capsLock: return "⇪"
+        case .f5: return "F5"
+        case .f6: return "F6"
+        case .custom: return "自定义"
+        }
+    }
+
     var hint: String? {
         switch self {
         case .fn: return "可能被微信等应用占用"
@@ -96,7 +109,11 @@ final class HotkeyMonitor {
         if wasRunning { start() }
     }
 
+    var isRunning: Bool { eventTap != nil }
+
     func start() {
+        guard eventTap == nil else { return }
+
         var eventMask: CGEventMask = 0
 
         if triggerKey == .custom, let combo = customCombo, !combo.isModifierOnly {

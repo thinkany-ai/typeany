@@ -1,0 +1,5 @@
+/* Template: the Makefile fills __BUNDLE_ID__ and __DISPLAY_NAME__ per VARIANT */
+"CFBundleName" = "__DISPLAY_NAME__";
+"CFBundleDisplayName" = "__DISPLAY_NAME__";
+"__BUNDLE_ID__" = "__DISPLAY_NAME__";
+"__BUNDLE_ID__.Hans" = "__DISPLAY_NAME__ Pinyin";

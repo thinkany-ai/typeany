@@ -1,26 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Template: the Makefile fills __BUNDLE_ID__, __DISPLAY_NAME__ and __VARIANT__ per VARIANT (dev | release) -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>TypeAny</string>
+    <string>__DISPLAY_NAME__</string>
+    <key>CFBundleDisplayName</key>
+    <string>__DISPLAY_NAME__</string>
     <key>CFBundleIdentifier</key>
-    <string>com.typeany.app</string>
+    <string>__BUNDLE_ID__</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>2</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>0.2.0</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>TypeAny</string>
+    <!-- dev | release: selects data directory and preferences suite (see AppVariant.swift) -->
+    <key>TypeAnyVariant</key>
+    <string>__VARIANT__</string>
     <key>LSUIElement</key>
     <true/>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>TypeAny needs microphone access to record your voice for speech-to-text transcription.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>TypeAny needs speech recognition access to convert your voice into text.</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
+
+    <!-- Input method -->
+    <key>InputMethodConnectionName</key>
+    <string>__BUNDLE_ID___Connection</string>
+    <key>InputMethodServerControllerClass</key>
+    <string>TypeAnyInputController</string>
+    <key>TISInputSourceID</key>
+    <string>__BUNDLE_ID__</string>
+    <key>TISIntendedLanguage</key>
+    <string>zh-Hans</string>
+    <key>tsInputMethodCharacterRepertoireKey</key>
+    <array>
+        <string>Hans</string>
+        <string>Latn</string>
+    </array>
+    <key>tsInputMethodIconFileKey</key>
+    <string>TypeAny.pdf</string>
+    <key>ComponentInputModeDict</key>
+    <dict>
+        <key>tsInputModeListKey</key>
+        <dict>
+            <key>__BUNDLE_ID__.Hans</key>
+            <dict>
+                <key>TISInputSourceID</key>
+                <string>__BUNDLE_ID__.Hans</string>
+                <key>TISIntendedLanguage</key>
+                <string>zh-Hans</string>
+                <key>tsInputModeScriptKey</key>
+                <string>smSimpChinese</string>
+                <key>tsInputModeMenuIconFileKey</key>
+                <string>TypeAny.pdf</string>
+                <key>tsInputModeAlternateMenuIconFileKey</key>
+                <string>TypeAny.pdf</string>
+                <key>tsInputModePaletteIconFileKey</key>
+                <string>TypeAny.pdf</string>
+                <key>tsInputModePrimaryInScriptKey</key>
+                <true/>
+                <key>tsInputModeIsVisibleKey</key>
+                <true/>
+                <key>tsInputModeDefaultStateKey</key>
+                <true/>
+            </dict>
+        </dict>
+        <key>tsVisibleInputModeOrderedArrayKey</key>
+        <array>
+            <string>__BUNDLE_ID__.Hans</string>
+        </array>
+    </dict>
 </dict>
 </plist>

@@ -1,6 +1,26 @@
+# Build output
 .build/
+build/
+dist/
+*.dmg
+*.zip
+
+# SwiftPM / Xcode
+.swiftpm/
 *.xcodeproj
 *.xcworkspace
+xcuserdata/
+DerivedData/
+
+# Local secrets — never commit signing material or env files
+.env
+.env.*
+*.p12
+*.cer
+*.mobileprovision
+
+# Local tooling
+.claude/settings.local.json
 .DS_Store
 *.o
 *.d

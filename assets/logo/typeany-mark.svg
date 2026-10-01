@@ -1,0 +1,12 @@
+<!-- TypeAny monochrome mark, 16pt grid: square keycap with eye cut-outs (menu bar / input menu template icon).
+     Plain even-odd paths, no masks: macOS template images drop SVG/PDF masks. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#000000" fill-rule="evenodd">
+    <!-- 12.6×12.6 square keycap outline (walls) -->
+    <path d="M5.1 1.7 H10.9 A3.4 3.4 0 0 1 14.3 5.1 V10.9 A3.4 3.4 0 0 1 10.9 14.3 H5.1 A3.4 3.4 0 0 1 1.7 10.9 V5.1 A3.4 3.4 0 0 1 5.1 1.7 Z
+             M5.4 3 H10.6 A2.3 2.3 0 0 1 12.9 5.3 V9.3 A2.3 2.3 0 0 1 10.6 11.6 H5.4 A2.3 2.3 0 0 1 3.1 9.3 V5.3 A2.3 2.3 0 0 1 5.4 3 Z"/>
+    <!-- eyes -->
+    <rect x="5.4" y="4.9" width="1.4" height="3.4" rx="0.7"/>
+    <rect x="9.2" y="4.9" width="1.4" height="3.4" rx="0.7"/>
+  </g>
+</svg>

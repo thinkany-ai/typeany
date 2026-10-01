@@ -2,7 +2,8 @@ import Foundation
 
 final class PreferencesManager {
     static let shared = PreferencesManager()
-    private let defaults = UserDefaults.standard
+    // Per-variant suite (AppVariant): dev and release builds keep separate settings.
+    private let defaults = UserDefaults(suiteName: AppVariant.defaultsSuite) ?? .standard
 
     private init() {
         // Register defaults
@@ -13,6 +14,9 @@ final class PreferencesManager {
             Constants.Defaults.llmAPIKey: "",
             Constants.Defaults.llmModel: "gpt-4o-mini",
             Constants.Defaults.vadEnabled: true,
+            Constants.Defaults.liveTypingEnabled: true,
+            Constants.Defaults.predictionEnabled: true,
+            Constants.Defaults.autoSpacingEnabled: true,
             Constants.Defaults.asrEngine: ASREngineType.apple.rawValue,
             Constants.Defaults.whisperModelPath: WhisperLocalEngine.defaultModelPath,
             Constants.Defaults.whisperAPIBaseURL: "",
@@ -116,6 +120,43 @@ final class PreferencesManager {
     var vadEnabled: Bool {
         get { defaults.bool(forKey: Constants.Defaults.vadEnabled) }
         set { defaults.set(newValue, forKey: Constants.Defaults.vadEnabled) }
+    }
+
+    // MARK: - Onboarding
+
+    var onboardingCompleted: Bool {
+        get { defaults.bool(forKey: Constants.Defaults.onboardingCompleted) }
+        set { defaults.set(newValue, forKey: Constants.Defaults.onboardingCompleted) }
+    }
+
+    /// Short key-cap label for the voice trigger, e.g. "右 ⌥"
+    var triggerKeyLabel: String {
+        if triggerKey == .custom, let combo = customKeyCombo {
+            return combo.displayString
+        }
+        return triggerKey.shortLabel
+    }
+
+    // MARK: - Pinyin
+
+    /// Show next-word suggestions (联想) after committing Chinese text
+    var predictionEnabled: Bool {
+        get { defaults.bool(forKey: Constants.Defaults.predictionEnabled) }
+        set { defaults.set(newValue, forKey: Constants.Defaults.predictionEnabled) }
+    }
+
+    /// 中英文之间自动加空格 for committed text (我用 GitHub 写代码)
+    var autoSpacingEnabled: Bool {
+        get { defaults.bool(forKey: Constants.Defaults.autoSpacingEnabled) }
+        set { defaults.set(newValue, forKey: Constants.Defaults.autoSpacingEnabled) }
+    }
+
+    // MARK: - Live Typing
+
+    /// Type partial transcription into the input field while speaking (Apple ASR only)
+    var liveTypingEnabled: Bool {
+        get { defaults.bool(forKey: Constants.Defaults.liveTypingEnabled) }
+        set { defaults.set(newValue, forKey: Constants.Defaults.liveTypingEnabled) }
     }
 
     // MARK: - Hot Words

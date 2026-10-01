@@ -1,0 +1,12 @@
+<!-- TypeAny wordmark: icon + name. Brand name is "TypeAny" (capital A, like ThinkAny / WorkAny / CodeAny). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360">
+  <g transform="translate(40 40) scale(0.2734)">
+    <rect x="0" y="0" width="1024" height="1024" rx="230" fill="#14B8A6"/>
+    <rect x="212" y="232" width="600" height="600" rx="142" fill="#B5DED8"/>
+    <rect x="258" y="256" width="508" height="494" rx="110" fill="#FFFFFF"/>
+    <rect x="374" y="376" width="60" height="144" rx="30" fill="#14B8A6"/>
+    <rect x="590" y="376" width="60" height="144" rx="30" fill="#14B8A6"/>
+  </g>
+  <text x="372" y="226" font-family="SF Pro Display, -apple-system, Helvetica Neue, Arial" font-weight="700"
+        font-size="168" letter-spacing="-4" fill="#132322">TypeAny</text>
+</svg>

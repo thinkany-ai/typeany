@@ -1,0 +1,33 @@
+# TypeAny 拼音 = 雾凇拼音（rime-ice, GPL-3.0）完整方案 + TypeAny 的调整
+# 雾凇的 lua 功能（以词定字、长词优先、日期、计算器……）、英文单词、emoji 全部沿用，
+# 在此基础上：改方案名、加入 TypeAny 高频简拼表。
+
+# The deployer reads schema/schema_id from the raw file, so `schema` is spelled out here
+schema:
+  schema_id: typeany_pinyin
+  name: TypeAny 拼音
+  version: "1.0"
+  description: |
+    TypeAny 全拼输入，基于雾凇拼音 https://github.com/iDvel/rime-ice
+  dependencies:
+    - melt_eng        # 英文输入
+    - radical_pinyin  # 部件拆字
+
+__include: rime_ice.schema:/
+
+__patch:
+  # 高频简拼置顶：typeany_phrase.txt（s → 是，sh → 时候 …）
+  engine/translators/@next: table_translator@typeany_phrase
+  typeany_phrase:
+    dictionary: ""
+    user_dict: typeany_phrase
+    db_class: stabledb
+    enable_completion: false
+    enable_sentence: false
+    initial_quality: 99
+
+  # 记住用户选过的字词，常用的自动排前
+  translator/enable_user_dict: true
+
+  # 候选数与 TypeAny 候选窗一致
+  menu/page_size: 5

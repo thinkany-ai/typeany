@@ -12,12 +12,12 @@ final class TextInjector {
 
         // 2. Check if current input source is CJK
         let originalInputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue()
-        let isCJK = isCurrentInputSourceCJK()
+        let isCJK = Self.isCurrentInputSourceCJK()
         var asciiSource: TISInputSource?
 
         if isCJK {
             // Switch to ASCII input source
-            asciiSource = findASCIIInputSource()
+            asciiSource = Self.findASCIIInputSource()
             if let ascii = asciiSource {
                 TISSelectInputSource(ascii)
                 usleep(50_000) // 50ms for input source switch
@@ -71,7 +71,7 @@ final class TextInjector {
 
     // MARK: - Input Source Detection
 
-    private func isCurrentInputSourceCJK() -> Bool {
+    static func isCurrentInputSourceCJK() -> Bool {
         guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else { return false }
         guard let idPtr = TISGetInputSourceProperty(source, kTISPropertyInputSourceID) else { return false }
         let sourceID = Unmanaged<CFString>.fromOpaque(idPtr).takeUnretainedValue() as String
@@ -91,7 +91,7 @@ final class TextInjector {
         return cjkPrefixes.contains { sourceID.hasPrefix($0) }
     }
 
-    private func findASCIIInputSource() -> TISInputSource? {
+    static func findASCIIInputSource() -> TISInputSource? {
         let conditions: [String: Any] = [
             kTISPropertyInputSourceType as String: kTISTypeKeyboardLayout as String,
             kTISPropertyInputSourceIsASCIICapable as String: true,

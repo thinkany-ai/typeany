@@ -4,28 +4,34 @@ final class MenuBarController {
     private var statusItem: NSStatusItem?
     private let appState = AppState.shared
     private let settingsWindowController = SettingsWindowController()
-    private let hotWordsWindowController = HotWordsWindowController()
     var onQuit: (() -> Void)?
+    var onOpenOnboarding: (() -> Void)?
     var onHistoryInject: ((String) -> Void)?
     var onTriggerKeyChanged: (() -> Void)?
 
     func setup() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-
-        if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "mic.fill", accessibilityDescription: "TypeAny")
-            button.image?.size = NSSize(width: 16, height: 16)
+        // Dev builds show a "Dev" label next to the icon so they're never mistaken for release
+        statusItem = NSStatusBar.system.statusItem(
+            withLength: AppVariant.isDev ? NSStatusItem.variableLength : NSStatusItem.squareLength)
+        if AppVariant.isDev, let button = statusItem?.button {
+            button.title = "Dev"
+            button.font = NSFont.systemFont(ofSize: 10, weight: .semibold)
+            button.imagePosition = .imageLeading
         }
 
+        updateIcon(recording: false)
         rebuildMenu()
     }
 
     func updateIcon(recording: Bool) {
-        if let button = statusItem?.button {
-            let name = recording ? "mic.badge.plus" : "mic.fill"
-            button.image = NSImage(systemSymbolName: name, accessibilityDescription: "TypeAny")
-            button.image?.size = NSSize(width: 16, height: 16)
-        }
+        guard let button = statusItem?.button else { return }
+        // Idle: the TypeAny mark (template PDF); recording: a mic so it's obvious we're listening
+        let image = recording
+            ? NSImage(systemSymbolName: "mic.fill", accessibilityDescription: "TypeAny")
+            : (NSImage(named: "TypeAny") ?? NSImage(systemSymbolName: "mic.fill", accessibilityDescription: "TypeAny"))
+        image?.isTemplate = true
+        image?.size = NSSize(width: 16, height: 16)
+        button.image = image
     }
 
     func rebuildMenu() {
@@ -84,6 +90,16 @@ final class MenuBarController {
         vadItem.target = self
         vadItem.state = PreferencesManager.shared.vadEnabled ? .on : .off
         menu.addItem(vadItem)
+
+        // Live typing toggle
+        let liveItem = NSMenuItem(
+            title: "Live Typing",
+            action: #selector(toggleLiveTyping(_:)),
+            keyEquivalent: ""
+        )
+        liveItem.target = self
+        liveItem.state = PreferencesManager.shared.liveTypingEnabled ? .on : .off
+        menu.addItem(liveItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -148,6 +164,10 @@ final class MenuBarController {
         topSettingsItem.target = self
         menu.addItem(topSettingsItem)
 
+        let onboardingItem = NSMenuItem(title: "使用引导…", action: #selector(openOnboarding(_:)), keyEquivalent: "")
+        onboardingItem.target = self
+        menu.addItem(onboardingItem)
+
         menu.addItem(NSMenuItem.separator())
 
         // Quit
@@ -177,21 +197,37 @@ final class MenuBarController {
         rebuildMenu()
     }
 
+    @objc private func toggleLiveTyping(_ sender: NSMenuItem) {
+        PreferencesManager.shared.liveTypingEnabled.toggle()
+        rebuildMenu()
+    }
+
     @objc private func toggleLLM(_ sender: NSMenuItem) {
         PreferencesManager.shared.llmEnabled.toggle()
         rebuildMenu()
     }
 
+    @objc private func openOnboarding(_ sender: NSMenuItem) {
+        onOpenOnboarding?()
+    }
+
     @objc private func openSettings(_ sender: NSMenuItem) {
+        showSettings()
+    }
+
+    func showSettings(tab: SettingsTab = .general) {
         settingsWindowController.onTriggerKeyChanged = { [weak self] in
             self?.onTriggerKeyChanged?()
             self?.rebuildMenu()
         }
-        settingsWindowController.show()
+        settingsWindowController.onPreferencesChanged = { [weak self] in
+            self?.rebuildMenu()
+        }
+        settingsWindowController.show(tab: tab)
     }
 
     @objc private func openHotWords(_ sender: NSMenuItem) {
-        hotWordsWindowController.show()
+        showSettings(tab: .hotWords)
     }
 
     @objc private func historyItemSelected(_ sender: NSMenuItem) {

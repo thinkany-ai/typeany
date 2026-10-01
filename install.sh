@@ -12,7 +12,7 @@ if [ "$OS_VERSION" -lt 14 ]; then
 fi
 
 # Check if already installed
-if [ -d "/Applications/TypeAny.app" ]; then
+if [ -d "$HOME/Library/Input Methods/TypeAny.app" ]; then
   echo "⚠️  TypeAny is already installed. Updating..."
 fi
 
@@ -24,6 +24,14 @@ if ! command -v swift &> /dev/null; then
   exit 1
 fi
 
+# Pinyin engine
+if ! command -v brew &> /dev/null; then
+  echo "❌ Homebrew is required to install librime: https://brew.sh"
+  exit 1
+fi
+echo "📦 Installing librime and OpenCC..."
+brew install librime opencc
+
 # Clone or update repo
 TMPDIR=$(mktemp -d)
 echo "📥 Cloning TypeAny..."
@@ -31,12 +39,8 @@ git clone --depth=1 https://github.com/thinkany-ai/typeany.git "$TMPDIR/typeany"
 
 # Build
 cd "$TMPDIR/typeany"
-echo "🔨 Building TypeAny..."
-make build
-
-# Install
-echo "📂 Installing to /Applications..."
-cp -R ".build/TypeAny.app" "/Applications/"
+echo "🔨 Building and installing TypeAny..."
+make install VARIANT=release
 
 # Cleanup
 rm -rf "$TMPDIR"
@@ -44,7 +48,7 @@ rm -rf "$TMPDIR"
 echo ""
 echo "✅ TypeAny installed successfully!"
 echo ""
-echo "👉 Launch: open /Applications/TypeAny.app"
-echo "   Or find it in Launchpad / Spotlight"
+echo "👉 Switch to「TypeAny 拼音」from the input menu in the menu bar"
+echo "   (or System Settings → Keyboard → Input Sources → add TypeAny)"
 echo ""
-echo "⚙️  First launch: grant Microphone, Speech Recognition & Accessibility permissions"
+echo "⚙️  First use: grant Microphone, Speech Recognition & Accessibility permissions"

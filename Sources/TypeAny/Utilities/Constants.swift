@@ -1,8 +1,6 @@
 import Foundation
 
 enum Constants {
-    static let bundleIdentifier = "com.typeany.app"
-
     enum Defaults {
         static let selectedLanguage = "selectedLanguage"
         static let llmEnabled = "llmEnabled"
@@ -11,6 +9,9 @@ enum Constants {
         static let llmModel = "llmModel"
         static let hotWords = "hotWords"
         static let vadEnabled = "vadEnabled"
+        static let liveTypingEnabled = "liveTypingEnabled"
+        static let predictionEnabled = "predictionEnabled"
+        static let autoSpacingEnabled = "autoSpacingEnabled"
         static let injectionHistory = "injectionHistory"
         static let asrEngine = "asrEngine"
         static let whisperModelPath = "whisperModelPath"
@@ -19,5 +20,6 @@ enum Constants {
         static let whisperAPIModel = "whisperAPIModel"
         static let triggerKey = "triggerKey"
         static let customKeyCombo = "customKeyCombo"
+        static let onboardingCompleted = "onboardingCompleted"
     }
 }

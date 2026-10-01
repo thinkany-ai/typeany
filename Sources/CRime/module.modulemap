@@ -1,0 +1,5 @@
+module CRime [system] {
+    header "rime_shim.h"
+    link "rime"
+    export *
+}
