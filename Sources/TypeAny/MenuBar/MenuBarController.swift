@@ -34,6 +34,13 @@ final class MenuBarController {
         button.image = image
     }
 
+    func updateIconForPermissionIssue() {
+        if let button = statusItem?.button {
+            button.image = NSImage(systemSymbolName: "mic.slash.fill", accessibilityDescription: "TypeAny - Permission Required")
+            button.image?.size = NSSize(width: 16, height: 16)
+        }
+    }
+
     func rebuildMenu() {
         let menu = NSMenu()
 

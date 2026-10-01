@@ -49,8 +49,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         InputMethodState.openOnboarding = { OnboardingLauncher.launch() }
 
         if PreferencesManager.shared.onboardingCompleted {
-            // Request permissions
-            _ = Permissions.checkAccessibility()
+            // Request permissions — check accessibility first, explaining where to enable it
+            if !Permissions.checkAccessibility() {
+                Permissions.showAccessibilityAlert()
+            }
             Permissions.requestMicrophone { granted in
                 if granted {
                     Permissions.requestSpeechRecognition { _ in }
@@ -74,6 +76,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         hotkeyMonitor.onKeyUp = { [weak self] in
             self?.stopRecording()
+        }
+        // The tap is retried every second until Accessibility is granted, so only flag the
+        // menu bar here; the explanatory alert is shown once at launch (above).
+        hotkeyMonitor.onTapCreateFailed = { [weak self] in
+            self?.menuBar.updateIconForPermissionIssue()
         }
         configureAndStartHotkey()
 
@@ -136,7 +143,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             triggerKey: prefs.triggerKey,
             customCombo: prefs.customKeyCombo
         )
+        let wasRunning = hotkeyMonitor.isRunning
         hotkeyMonitor.start()
+        if hotkeyMonitor.isRunning && !wasRunning {
+            menuBar.updateIcon(recording: false)  // clear a permission-issue icon
+        }
 
         // Event tap creation fails until Accessibility is granted; keep retrying
         // so the hotkey works as soon as the user flips the switch.
