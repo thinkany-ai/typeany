@@ -10,7 +10,7 @@ jobs:
     # 需要 macOS 26 SDK（Apple 本地翻译 Translation API）
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Toolchain
         run: |
@@ -33,7 +33,7 @@ jobs:
       - name: Archive
         run: ditto -c -k --keepParent .build/TypeAny.app TypeAny-unsigned.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: TypeAny-unsigned-${{ github.sha }}
           path: TypeAny-unsigned.zip
